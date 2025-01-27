@@ -3,7 +3,7 @@
 Plugin Name: WooCommerce Products & Categories Carousel Slider
 Plugin URI: https://github.com/selvaggiesteban/woocommerce-products-categories-carousel-slider
 Description: Crea carruseles para productos y categorías de WooCommerce con múltiples opciones de configuración.
-Version: 1.0.0
+Version: 1.1.0
 Author: Esteban Selvaggi
 Author URI: https://selvaggiesteban.dev
 License: GPL2
@@ -18,10 +18,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Clase principal del plugin
+// Clase principal del plugin para gestionar carruseles de WooCommerce
 class WooCommerce_PC_Carousel_Slider {
     
     // Constructor de la clase
+    // Inicializa los hooks y verifica la compatibilidad con WooCommerce
     public function __construct() {
         // Verificar si WooCommerce está activo
         if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) {
@@ -39,11 +40,12 @@ class WooCommerce_PC_Carousel_Slider {
         add_action('admin_post_save_carousel', array($this, 'save_carousel'));
         add_action('admin_post_delete_carousel', array($this, 'delete_carousel'));
         
-        // Registrar shortcode
+        // Registrar shortcode para usar carruseles
         add_shortcode('wpccs_carousel', array($this, 'generate_carousel_shortcode'));
     }
 
     // Método para cargar el dominio de texto para traducciones
+    // Permite internacionalizar el plugin
     public function load_plugin_textdomain() {
         load_plugin_textdomain(
             'wpccs-slider',
@@ -53,8 +55,9 @@ class WooCommerce_PC_Carousel_Slider {
     }
 
     // Método para cargar scripts y estilos en el frontend
+    // Incluye Slick Carousel y estilos personalizados
     public function load_frontend_scripts() {
-        // Cargar Slick Carousel
+        // Cargar Slick Carousel desde CDN
         wp_enqueue_style('slick-carousel', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css');
         wp_enqueue_style('slick-theme', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css');
         wp_enqueue_script('slick-carousel', 'https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js', array('jquery'), null, true);
@@ -65,7 +68,7 @@ class WooCommerce_PC_Carousel_Slider {
             .wpccs-carousel.slick-initialized .slick-slide {
                 display: flex;
                 flex-wrap: wrap;
-				margin: 10px 10px;
+                margin: 10px 10px;
             }
 
             /* Ocultar completamente texto y botones de navegación */
@@ -113,13 +116,14 @@ class WooCommerce_PC_Carousel_Slider {
         wp_add_inline_style('slick-carousel', $custom_css);
     }
 
-    // Método para cargar scripts y estilos en el admin
+    // Método para cargar scripts y estilos en el panel de administración
     public function load_admin_scripts($hook) {
         if (strpos($hook, 'wpccs-carousel') !== false) {
             wp_enqueue_style('wpccs-admin', plugin_dir_url(__FILE__) . 'css/wpccs-admin.css');
             wp_enqueue_script('wpccs-admin', plugin_dir_url(__FILE__) . 'js/wpccs-admin.js', array('jquery'), '1.0', true);
         }
     }// Método para inicializar el plugin
+    // Registra el tipo de post personalizado para los carruseles
     public function initialize_plugin() {
         register_post_type('wpccs_carousel', array(
             'labels' => array(
@@ -145,7 +149,9 @@ class WooCommerce_PC_Carousel_Slider {
     }
 
     // Método para crear el menú en el panel de administración
+    // Añade página principal y subpáginas para gestionar carruseles
     public function create_admin_menu() {
+        // Menú principal
         add_menu_page(
             __('Carruseles para WooCommerce', 'wpccs-slider'),
             __('Carruseles para WooCommerce', 'wpccs-slider'),
@@ -156,6 +162,7 @@ class WooCommerce_PC_Carousel_Slider {
             20
         );
         
+        // Submenú para ver todos los carruseles
         add_submenu_page(
             'wpccs-carousels',
             __('Todos los carruseles', 'wpccs-slider'),
@@ -165,6 +172,7 @@ class WooCommerce_PC_Carousel_Slider {
             array($this, 'admin_carousels_page')
         );
         
+        // Submenú para añadir nuevo carrusel
         add_submenu_page(
             'wpccs-carousels',
             __('Añadir nuevo carrusel', 'wpccs-slider'),
@@ -176,11 +184,14 @@ class WooCommerce_PC_Carousel_Slider {
     }
 
     // Método para mostrar la página principal de administración de carruseles
+    // Lista todos los carruseles creados con opciones de edición y eliminación
     public function admin_carousels_page() {
+        // Verificar permisos de usuario
         if (!current_user_can('manage_options')) {
             wp_die(__('No tienes permisos suficientes para acceder a esta página.', 'wpccs-slider'));
         }
 
+        // Obtener todos los carruseles
         $carousels = get_posts(array(
             'post_type' => 'wpccs_carousel',
             'numberposts' => -1
@@ -239,11 +250,14 @@ class WooCommerce_PC_Carousel_Slider {
         </div>
         <?php
     }// Método para mostrar la página de creación/edición de carrusel
+    // Proporciona un formulario completo para configurar carruseles de productos y categorías
     public function new_carousel_page() {
+        // Verificar permisos de usuario
         if (!current_user_can('manage_options')) {
             wp_die(__('No tienes permisos suficientes para acceder a esta página.', 'wpccs-slider'));
         }
 
+        // Obtener ID del carrusel si se está editando
         $carousel_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         $config = $carousel_id ? get_post_meta($carousel_id, 'wpccs_config', true) : array();
         $carousel_type = isset($config['carousel_type']) ? $config['carousel_type'] : 'products';
@@ -420,7 +434,8 @@ class WooCommerce_PC_Carousel_Slider {
         });
         </script>
         <?php
-    }// Método para renderizar configuraciones específicas de productos
+    }// Método privado para renderizar configuraciones específicas de productos
+    // Muestra opciones para filtrar y ordenar productos en el carrusel
     private function render_products_settings($config) {
         ?>
         <h3><?php echo __('Configuración de productos', 'wpccs-slider'); ?></h3>
@@ -528,11 +543,34 @@ class WooCommerce_PC_Carousel_Slider {
         <?php
     }
 
-    // Método para renderizar configuraciones específicas de categorías
+    // Método privado para renderizar configuraciones específicas de categorías
+    // Muestra opciones para filtrar y ordenar categorías de productos
     private function render_categories_settings($config) {
         ?>
         <h3><?php echo __('Configuración de categorías', 'wpccs-slider'); ?></h3>
         <table class="form-table">
+            <tr>
+                <th><label><?php echo __('Seleccionar categorías', 'wpccs-slider'); ?></label></th>
+                <td>
+                    <?php
+                    $categories = get_terms(array(
+                        'taxonomy' => 'product_cat',
+                        'hide_empty' => false,
+                        'parent' => 0  // Solo categorías de primer nivel
+                    ));
+                    
+                    if (!empty($categories)) {
+                        foreach ($categories as $category) {
+                            $this->render_category_checkbox($category, $config);
+                        }
+                    }
+                    ?>
+                    <p class="description">
+                        <?php echo __('Selecciona las categorías específicas a mostrar en el carrusel. Si no seleccionas ninguna, se mostrarán todas las categorías de primer nivel.', 'wpccs-slider'); ?>
+                    </p>
+                </td>
+            </tr>
+
             <tr>
                 <th><label><?php echo __('Mostrar solo categorías con productos', 'wpccs-slider'); ?></label></th>
                 <td>
@@ -578,6 +616,35 @@ class WooCommerce_PC_Carousel_Slider {
             </tr>
         </table>
         <?php
+    }
+
+    // Método privado para renderizar categorías con sus subcategorías
+    // Permite selección jerárquica de categorías
+    private function render_category_checkbox($category, $config, $depth = 0) {
+        $selected = isset($config['selected_categories']) && 
+                    in_array($category->term_id, $config['selected_categories']);
+        ?>
+        <label style="display: block; margin-bottom: 5px; padding-left: <?php echo $depth * 20; ?>px;">
+            <input type="checkbox" 
+                   name="selected_categories[]" 
+                   value="<?php echo $category->term_id; ?>" 
+                   <?php checked($selected, true); ?>>
+            <?php echo esc_html($category->name); ?>
+        </label>
+        <?php
+
+        // Buscar y mostrar subcategorías recursivamente
+        $subcategories = get_terms(array(
+            'taxonomy' => 'product_cat',
+            'hide_empty' => false,
+            'parent' => $category->term_id
+        ));
+
+        if (!empty($subcategories)) {
+            foreach ($subcategories as $subcategory) {
+                $this->render_category_checkbox($subcategory, $config, $depth + 1);
+            }
+        }
     }// Método para guardar la configuración del carrusel
     public function save_carousel() {
         // Verificar nonce y permisos
@@ -615,6 +682,7 @@ class WooCommerce_PC_Carousel_Slider {
         } 
         // Configuración específica para categorías
         else {
+            $config['selected_categories'] = isset($_POST['selected_categories']) ? array_map('intval', $_POST['selected_categories']) : array();
             $config['show_only_with_products'] = isset($_POST['show_only_with_products']) ? 1 : 0;
             $config['categories_orderby'] = sanitize_text_field($_POST['categories_orderby']);
             $config['categories_order'] = sanitize_text_field($_POST['categories_order']);
@@ -748,9 +816,7 @@ class WooCommerce_PC_Carousel_Slider {
 
         wp_reset_postdata();
         return ob_get_clean();
-    }
-
-    // Método para renderizar carrusel de categorías
+    }// Método para renderizar carrusel de categorías
     private function render_categories_carousel($carousel_id, $config) {
         $args = array(
             'taxonomy' => 'product_cat',
@@ -758,6 +824,14 @@ class WooCommerce_PC_Carousel_Slider {
             'orderby' => $config['categories_orderby'],
             'order' => $config['categories_order']
         );
+
+        // Si hay categorías seleccionadas, filtrarlas
+        if (!empty($config['selected_categories'])) {
+            $args['include'] = $config['selected_categories'];
+        } else {
+            // Si no hay selección, mostrar solo categorías de primer nivel
+            $args['parent'] = 0;
+        }
 
         $categories = get_terms($args);
         
