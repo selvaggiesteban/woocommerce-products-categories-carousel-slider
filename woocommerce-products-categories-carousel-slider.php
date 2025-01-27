@@ -147,13 +147,22 @@ class WooCommerce_PC_Carousel_Slider {
     // Método para crear el menú en el panel de administración
     public function create_admin_menu() {
         add_menu_page(
-            __('Carruseles para WooCommerce', 'wpccs-slider'), 
-            __('Carruseles para WooCommerce', 'wpccs-slider'), 
-            'manage_options', 
-            'wpccs-carousels', 
-            array($this, 'admin_carousels_page'), 
-            'dashicons-images-alt2', 
+            __('Carruseles para WooCommerce', 'wpccs-slider'),
+            __('Carruseles para WooCommerce', 'wpccs-slider'),
+            'manage_options',
+            'wpccs-carousels',
+            array($this, 'admin_carousels_page'),
+            'dashicons-images-alt2',
             20
+        );
+        
+        add_submenu_page(
+            'wpccs-carousels',
+            __('Todos los carruseles', 'wpccs-slider'),
+            __('Todos los carruseles', 'wpccs-slider'),
+            'manage_options',
+            'wpccs-carousels',
+            array($this, 'admin_carousels_page')
         );
         
         add_submenu_page(
